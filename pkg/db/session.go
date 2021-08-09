@@ -134,8 +134,8 @@ func updateSession(ctx context.Context,
 	return Do(ctx, func(ctx context.Context, conn *pgxpool.Conn) error {
 		_, err := conn.Exec(ctx, `update sessions set 
 		(ts,exit_page,is_bounce,duration,pageview,events) =
-		($1,$2,$3,$4,$5,pageview+$6,events+1)
-		where id=$7;`,
+		($1,$2,$3,$4,pageview+$5,events+1)
+		where id=$6;`,
 			ts, exitPage, false, duration, pageView, id,
 		)
 		return err
