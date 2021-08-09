@@ -39,11 +39,16 @@ CREATE TABLE IF NOT EXISTS sessions(
     duration integer,
     referrer TEXT,
     referrer_source TEXT,
+    utm_medium TEXT,
+    utm_source TEXT,
+    utm_campaign TEXT,
     country_code TEXT,
     screen_size TEXT,
     operating_system TEXT,
+    operating_system_version TEXT,
     browser TEXT,
     start TIMESTAMP,
+    browser_version TEXT,
     ts TIMESTAMP
 );
 SELECT create_hypertable('events', 'ts', if_not_exists => TRUE);
