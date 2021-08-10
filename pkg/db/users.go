@@ -2,87 +2,99 @@ package db
 
 import (
 	"context"
-	"encoding/base64"
 
+	"github.com/dgraph-io/badger/v3"
 	"github.com/gernest/yukio/pkg/models"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/protobuf/proto"
 )
 
-func CreateUser(ctx context.Context, usr *models.UserData) (id int64, err error) {
-	o, err := bcrypt.GenerateFromPassword([]byte(usr.Password), bcrypt.DefaultCost)
+func CreateUser(ctx context.Context, usr *models.UserData) (id uuid.UUID, err error) {
+	var password, value []byte
+	password, err = bcrypt.GenerateFromPassword([]byte(usr.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return 0, err
+		return
 	}
-	pass := base64.StdEncoding.EncodeToString(o)
-	err = Do(ctx, func(ctx context.Context, conn *pgxpool.Conn) error {
-		row := conn.QueryRow(ctx, `insert into users (username,email,password) values($1,$2,$3) RETURNING id;`,
-			usr.Username, usr.Email, pass)
-		return row.Scan(&id)
+	id = models.NewID()
+	value, err = proto.Marshal(&models.User{
+		Id:       id[:],
+		Username: usr.Username,
+		Email:    usr.Email,
+		Password: password,
 	})
+	if err != nil {
+		return
+	}
+	err = Set(value, gk().UserID(id), gk().UserEmail(usr.Email))
 	return
 }
 
-func DeleteUser(ctx context.Context, id int64) error {
-	return Do(ctx, func(ctx context.Context, conn *pgxpool.Conn) error {
-		_, err := conn.Exec(ctx, `delete from users where id =$1;`, id)
-		return err
+func DeleteUser(ctx context.Context, id uuid.UUID) error {
+	return db.Update(func(txn *badger.Txn) error {
+		k := gk().UserID(id)
+		defer pk(k)
+		i, err := txn.Get(k.Bytes())
+		if err != nil {
+			return err
+		}
+		var u models.User
+		err = i.Value(func(val []byte) error {
+			return proto.Unmarshal(val, &u)
+		})
+		if err != nil {
+			return err
+		}
+		ek := gk().UserEmail(u.Email)
+		defer pk(ek)
+		if err := txn.Delete(k.Bytes()); err != nil {
+			return err
+		}
+		return txn.Delete(ek.Bytes())
 	})
 }
 
-func GetUserByID(ctx context.Context, id int64) (*models.User, error) {
-	var usr models.User
-	err := Do(ctx, func(ctx context.Context, conn *pgxpool.Conn) error {
-		return conn.QueryRow(ctx, `select username,email from users where id=$1;`, id).
-			Scan(
-				&usr.Username,
-				&usr.Email,
-			)
+func GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	k := gk().UserID(id)
+	defer pk(k)
+	var u models.User
+	err := db.View(func(txn *badger.Txn) error {
+		i, err := txn.Get(k.Bytes())
+		if err != nil {
+			return err
+		}
+		return i.Value(func(val []byte) error { return proto.Unmarshal(val, &u) })
 	})
 	if err != nil {
 		return nil, err
 	}
-	usr.ID = id
-	return &usr, nil
+	return &u, nil
 }
 
 func GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	var usr models.User
-	err := Do(ctx, func(ctx context.Context, conn *pgxpool.Conn) error {
-		return conn.QueryRow(ctx, `select id,username from users where email=$1;`, email).
-			Scan(
-				&usr.ID,
-				&usr.Username,
-			)
+	k := gk().UserEmail(email)
+	defer pk(k)
+	var u models.User
+	err := db.View(func(txn *badger.Txn) error {
+		i, err := txn.Get(k.Bytes())
+		if err != nil {
+			return err
+		}
+		return i.Value(func(val []byte) error { return proto.Unmarshal(val, &u) })
 	})
 	if err != nil {
 		return nil, err
 	}
-	usr.Email = email
-	return &usr, nil
+	return &u, nil
 }
 
 func GetAndVerifyUserByEmail(ctx context.Context, email, password string) (*models.User, error) {
-	var usr models.User
-	var passwd string
-	err := Do(ctx, func(ctx context.Context, conn *pgxpool.Conn) error {
-		return conn.QueryRow(ctx, `select id,username,password from users where email=$1;`, email).
-			Scan(
-				&usr.ID,
-				&usr.Username,
-				&passwd,
-			)
-	})
+	u, err := GetUserByEmail(ctx, email)
 	if err != nil {
 		return nil, err
 	}
-	storedHash, err := base64.StdEncoding.DecodeString(passwd)
-	if err != nil {
+	if err := bcrypt.CompareHashAndPassword(u.Password, []byte(password)); err != nil {
 		return nil, err
 	}
-	if err := bcrypt.CompareHashAndPassword(storedHash, []byte(password)); err != nil {
-		return nil, err
-	}
-	usr.Email = email
-	return &usr, nil
+	return u, nil
 }

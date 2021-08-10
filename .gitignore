@@ -1,2 +1,4 @@
 */*.mmdb.gz
 .env
+tmp/
+.yukio/

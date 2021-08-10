@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "github.com/gernest/yukio/pkg/models";
+
+message User {
+  bytes id = 1;
+  string username = 2;
+  string email = 3;
+  bytes password = 4;
+  repeated Domain domains = 5;
+}
+
+message Domain { string name = 1; }

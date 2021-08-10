@@ -2,6 +2,7 @@ package models
 
 import (
 	valid "github.com/asaskevich/govalidator"
+	"github.com/google/uuid"
 )
 
 type UserData struct {
@@ -15,9 +16,6 @@ func (u UserData) Valid() error {
 	return err
 }
 
-type User struct {
-	ID int64
-
-	Username string
-	Email    string
+func NewID() uuid.UUID {
+	return uuid.New()
 }

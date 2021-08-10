@@ -1,29 +1,71 @@
 package db
 
 import (
-	"context"
+	"bytes"
 	"os"
+	"sync"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/dgraph-io/badger/v3"
+	"github.com/google/uuid"
 )
 
-var pool *pgxpool.Pool
+var pool = &sync.Pool{
+	New: func() interface{} { return new(Key) },
+}
+
+var (
+	UsersID    = []byte("/users/i/")
+	UsersEmail = []byte("/users/e/")
+)
+
+type Key struct {
+	bytes.Buffer
+}
+
+func (k *Key) UserID(id uuid.UUID) *Key {
+	k.Write(UsersID)
+	k.Write(id[:])
+	return k
+}
+
+func (k *Key) UserEmail(email string) *Key {
+	k.Write(UsersEmail)
+	k.WriteString(email)
+	return k
+}
+
+func gk() *Key {
+	return pool.Get().(*Key)
+}
+
+func pk(k *Key) {
+	k.Reset()
+	pool.Put(k)
+}
+
+var db *badger.DB
 
 func init() {
+	opts := badger.DefaultOptions(os.Getenv("STORAGE_PATH"))
 	var err error
-	pool, err = pgxpool.Connect(context.Background(), os.Getenv("POSTGRESQL_URL"))
+	db, err = badger.Open(opts)
 	if err != nil {
-		panic("Can't connect to timescale db" + err.Error())
+		panic("Failed to open database")
 	}
 }
 
-// Do acquires a new connection and calls fn with it. Ensures connection is
-// released before exit.
-func Do(ctx context.Context, fn func(ctx context.Context, conn *pgxpool.Conn) error) error {
-	conn, err := pool.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-	return fn(ctx, conn)
+func Set(value []byte, keys ...*Key) error {
+	defer func() {
+		for _, k := range keys {
+			pk(k)
+		}
+	}()
+	return db.Update(func(txn *badger.Txn) error {
+		for _, key := range keys {
+			if err := txn.Set(key.Bytes(), value); err != nil {
+				return nil
+			}
+		}
+		return nil
+	})
 }
