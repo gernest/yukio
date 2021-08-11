@@ -14,8 +14,9 @@ var pool = &sync.Pool{
 }
 
 var (
-	UsersID    = []byte("/users/i/")
-	UsersEmail = []byte("/users/e/")
+	UsersID     = []byte("/users/i/")
+	UsersEmail  = []byte("/users/e/")
+	SiteSession = []byte("/site/session/")
 )
 
 type Key struct {
@@ -31,6 +32,12 @@ func (k *Key) UserID(id uuid.UUID) *Key {
 func (k *Key) UserEmail(email string) *Key {
 	k.Write(UsersEmail)
 	k.WriteString(email)
+	return k
+}
+
+func (k *Key) SessionID(userID uuid.UUID, domain string) *Key {
+	k.Write(userID[:])
+	k.WriteString(domain)
 	return k
 }
 

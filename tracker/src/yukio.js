@@ -87,7 +87,7 @@
 
       if (link && link.href && link.host && link.host !== location.host) {
         if (middle || click)
-          yukio('Outbound Link: Click', { props: { url: link.href >>)
+          yukio('Outbound Link: Click', { props: { url: link.href } })
 
         // Delay navigation so that yukio is notified of the click
         if (!link.target || link.target.match(/^_(self|parent|top)$/i)) {

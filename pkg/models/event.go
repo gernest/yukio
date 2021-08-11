@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type Event struct {
 	ID                     int64
@@ -8,8 +12,7 @@ type Event struct {
 	Domain                 string
 	Hostname               string
 	Pathname               string
-	UserID                 int64
-	SessionID              int64
+	UserID                 uuid.UUID
 	Referrer               string
 	ReferrerSource         string
 	UTMMedium              string

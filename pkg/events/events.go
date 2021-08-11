@@ -12,6 +12,8 @@ const (
 	Referer         = "referer"
 	Path            = "path"
 	CustomEventName = "custom_event_name"
+	EntryPage       = "entry_page"
+	ExitPage        = "exit_page"
 )
 
 var PageView = prometheus.NewCounterVec(
