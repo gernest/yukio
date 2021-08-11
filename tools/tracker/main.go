@@ -27,7 +27,7 @@ func main() {
 		d := strings.Join(append([]string{"yukio"}, v...), ".")
 		data := map[string]interface{}{}
 		for _, n := range v {
-			data[n] = true
+			data[strings.ReplaceAll(n, "-", "_")] = true
 		}
 		fatal(
 			compile(m, "./tracker/src/yukio.js", "js/"+d+".js", data),
