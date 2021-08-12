@@ -5,9 +5,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var PageDuration = prometheus.NewHistogramVec(
+var VisitDuration = prometheus.NewHistogramVec(
 	prometheus.HistogramOpts{
-		Name: "page_duration",
+		Name: "visit_duration",
 		Help: "Tracks how long a visitor stays on a page",
 	},
 	[]string{
@@ -18,9 +18,9 @@ var PageDuration = prometheus.NewHistogramVec(
 	},
 )
 
-var Bounce = prometheus.NewCounterVec(
+var BounceRate = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
-		Name: "bounce",
+		Name: "bounce_rate",
 		Help: "Counts a single page view",
 	},
 	[]string{
@@ -31,9 +31,9 @@ var Bounce = prometheus.NewCounterVec(
 	},
 )
 
-var Events = prometheus.NewGaugeVec(
+var Visits = prometheus.NewGaugeVec(
 	prometheus.GaugeOpts{
-		Name: "session_events_count",
+		Name: "visits",
 		Help: "Counts a number of events per session",
 	},
 	[]string{
@@ -45,11 +45,11 @@ var Events = prometheus.NewGaugeVec(
 )
 
 func RecordSession(s *models.Session) {
-	PageDuration.WithLabelValues(
+	VisitDuration.WithLabelValues(
 		s.Domain, s.Referrer, s.EntryPage, s.ExitPage,
 	).Observe(float64(s.Duration.Milliseconds()))
 	if s.IsBounce {
-		Bounce.WithLabelValues(
+		BounceRate.WithLabelValues(
 			s.Domain, s.Referrer, s.EntryPage,
 		).Add(float64(s.Events))
 	}
