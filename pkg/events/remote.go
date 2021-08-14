@@ -7,12 +7,14 @@ import (
 	"time"
 
 	"github.com/gernest/yukio/pkg/config"
+	"github.com/gernest/yukio/pkg/loga"
 	"github.com/gogo/protobuf/proto"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/prompb"
 	"github.com/prometheus/prometheus/storage/remote"
+	"go.uber.org/zap"
 )
 
 var registry = prometheus.NewRegistry()
@@ -26,6 +28,7 @@ func register(c ...prometheus.Collector) {
 func WriteLoop(ctx context.Context, write remote.WriteClient, c *config.Config) {
 	tick := time.NewTicker(c.TimeSeries.FlushInterval)
 	defer tick.Stop()
+	log := loga.Get(ctx).Named("ts-write-loop")
 	for {
 		select {
 		case <-ctx.Done():
@@ -33,6 +36,8 @@ func WriteLoop(ctx context.Context, write remote.WriteClient, c *config.Config) 
 		case <-tick.C:
 			m, err := registry.Gather()
 			if err != nil {
+				log.Error("Failed to gather metrics",
+					zap.Error(err))
 				continue
 			}
 			s := sample(m)
@@ -42,7 +47,8 @@ func WriteLoop(ctx context.Context, write remote.WriteClient, c *config.Config) 
 			}
 			err = write.Store(ctx, b)
 			if err != nil {
-				// log
+				log.Error("Failed to store series to remote store",
+					zap.Error(err))
 			}
 		}
 	}

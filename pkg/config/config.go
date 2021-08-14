@@ -6,10 +6,20 @@ import (
 )
 
 const DefaultSessionWindow = 3 * time.Minute
+const DefaultFlushInterval = time.Second
 
 type Config struct {
 	SessionWindow time.Duration
 	TimeSeries    TimeSeries
+}
+
+func Default() Config {
+	return Config{
+		SessionWindow: DefaultSessionWindow,
+		TimeSeries: TimeSeries{
+			FlushInterval: DefaultFlushInterval,
+		},
+	}
 }
 
 type TimeSeries struct {
