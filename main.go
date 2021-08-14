@@ -11,6 +11,7 @@ import (
 	"github.com/dgraph-io/badger/v3"
 	"github.com/gernest/yukio/pkg/config"
 	"github.com/gernest/yukio/pkg/db"
+	"github.com/gernest/yukio/pkg/events"
 	"github.com/gernest/yukio/pkg/handlers"
 	"github.com/gernest/yukio/pkg/loga"
 	"github.com/gernest/yukio/pkg/web"
@@ -26,12 +27,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "yukio"
 	app.Usage = "Web analytics"
-	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:  "config,c",
-			Usage: "Path to configuration file",
-		},
-	}
+	app.Flags = config.Flags()
 	app.Action = run
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -40,7 +36,7 @@ func main() {
 
 func run(cliCtx *cli.Context) error {
 	ctx := context.Background()
-	o := config.Default()
+	o := config.Default().With(cliCtx)
 	if f := cliCtx.GlobalString("config"); f != "" {
 		n, err := os.Open(f)
 		if err != nil {
@@ -73,6 +69,9 @@ func run(cliCtx *cli.Context) error {
 	web.AddRoutes(m)
 	handlers.AddRoutes(m)
 	zl.Info("Starting server", zap.Int("port", o.ListenPort))
+	go func() {
+		events.WriteLoop(ctx)
+	}()
 	return http.ListenAndServe(fmt.Sprintf(":%d", o.ListenPort), m)
 }
 
