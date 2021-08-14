@@ -26,6 +26,12 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "yukio"
 	app.Usage = "Web analytics"
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:  "config,c",
+			Usage: "Path to configuration file",
+		},
+	}
 	app.Action = run
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
@@ -35,7 +41,7 @@ func main() {
 func run(cliCtx *cli.Context) error {
 	ctx := context.Background()
 	o := config.Default()
-	if f := cliCtx.String("config"); f != "" {
+	if f := cliCtx.GlobalString("config"); f != "" {
 		n, err := os.Open(f)
 		if err != nil {
 			return fmt.Errorf("Failed to open config file path:%s err:%v ", f, err)
