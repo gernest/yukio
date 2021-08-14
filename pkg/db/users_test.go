@@ -4,11 +4,22 @@ import (
 	"context"
 	"testing"
 
+	"github.com/dgraph-io/badger/v3"
 	"github.com/gernest/yukio/pkg/models"
 )
 
 func TestUsers(t *testing.T) {
-	ctx := context.Background()
+	o := badger.DefaultOptions("")
+	o.Logger = nil
+	o.InMemory = true
+	db, err := badger.Open(o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		db.Close()
+	})
+	ctx := SetStore(context.Background(), db)
 	t.Run("Create", func(t *testing.T) {
 		email := "test@yukio.io"
 		password := "Pass"

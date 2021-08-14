@@ -1,0 +1,6 @@
+FROM gcr.io/distroless/static:nonroot
+WORKDIR /
+COPY yukio.linux yukio
+USER nonroot:nonroot
+
+ENTRYPOINT ["/yukio"]

@@ -54,7 +54,7 @@ func CreateSessionFromEvent(ctx context.Context, s *models.Session, event *model
 	if err != nil {
 		return err
 	}
-	return db.Update(func(txn *badger.Txn) error {
+	return GetStore(ctx).Update(func(txn *badger.Txn) error {
 		return txn.Set(k.Bytes(), v)
 	})
 }
@@ -68,7 +68,7 @@ func SaveSession(ctx context.Context, event *models.Event, sessionWindow time.Du
 	}()
 	k := gk().SessionID(event.UserID, event.Domain)
 	defer pk(k)
-	err = db.View(func(txn *badger.Txn) error {
+	err = GetStore(ctx).View(func(txn *badger.Txn) error {
 		x, err := txn.Get(k.Bytes())
 		if err != nil {
 			return err
@@ -95,7 +95,7 @@ func SaveSession(ctx context.Context, event *models.Event, sessionWindow time.Du
 		os.Duration = event.TS.Sub(os.Start)
 		os.Events++
 		os.PageViews++
-		err = db.Update(func(txn *badger.Txn) error {
+		err = GetStore(ctx).Update(func(txn *badger.Txn) error {
 			v, err := marshalSession(&os)
 			if err != nil {
 				return err

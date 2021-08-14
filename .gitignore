@@ -3,3 +3,4 @@
 tmp/
 .yukio/
 yukio
+*.linux

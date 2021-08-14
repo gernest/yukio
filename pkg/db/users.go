@@ -26,12 +26,12 @@ func CreateUser(ctx context.Context, usr *models.UserData) (id uuid.UUID, err er
 	if err != nil {
 		return
 	}
-	err = Set(value, gk().UserID(id), gk().UserEmail(usr.Email))
+	err = Set(ctx, value, gk().UserID(id), gk().UserEmail(usr.Email))
 	return
 }
 
 func DeleteUser(ctx context.Context, id uuid.UUID) error {
-	return db.Update(func(txn *badger.Txn) error {
+	return GetStore(ctx).Update(func(txn *badger.Txn) error {
 		k := gk().UserID(id)
 		defer pk(k)
 		i, err := txn.Get(k.Bytes())
@@ -58,7 +58,7 @@ func GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	k := gk().UserID(id)
 	defer pk(k)
 	var u models.User
-	err := db.View(func(txn *badger.Txn) error {
+	err := GetStore(ctx).View(func(txn *badger.Txn) error {
 		i, err := txn.Get(k.Bytes())
 		if err != nil {
 			return err
@@ -75,7 +75,7 @@ func GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	k := gk().UserEmail(email)
 	defer pk(k)
 	var u models.User
-	err := db.View(func(txn *badger.Txn) error {
+	err := GetStore(ctx).View(func(txn *badger.Txn) error {
 		i, err := txn.Get(k.Bytes())
 		if err != nil {
 			return err

@@ -2,7 +2,7 @@ package db
 
 import (
 	"bytes"
-	"os"
+	"context"
 	"sync"
 
 	"github.com/dgraph-io/badger/v3"
@@ -50,24 +50,23 @@ func pk(k *Key) {
 	pool.Put(k)
 }
 
-var db *badger.DB
+type dbKey struct{}
 
-func init() {
-	opts := badger.DefaultOptions(os.Getenv("STORAGE_PATH"))
-	var err error
-	db, err = badger.Open(opts)
-	if err != nil {
-		panic("Failed to open database")
-	}
+func GetStore(ctx context.Context) *badger.DB {
+	return ctx.Value(dbKey{}).(*badger.DB)
 }
 
-func Set(value []byte, keys ...*Key) error {
+func SetStore(ctx context.Context, s *badger.DB) context.Context {
+	return context.WithValue(ctx, dbKey{}, s)
+}
+
+func Set(ctx context.Context, value []byte, keys ...*Key) error {
 	defer func() {
 		for _, k := range keys {
 			pk(k)
 		}
 	}()
-	return db.Update(func(txn *badger.Txn) error {
+	return GetStore(ctx).Update(func(txn *badger.Txn) error {
 		for _, key := range keys {
 			if err := txn.Set(key.Bytes(), value); err != nil {
 				return nil
