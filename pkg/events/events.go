@@ -41,6 +41,10 @@ var Custom = prometheus.NewCounterVec(
 	},
 )
 
+func init() {
+	register(PageView, Custom)
+}
+
 func Record(ctx context.Context, e *models.Event) {
 	if e.Name == "pageview" {
 		PageView.WithLabelValues(e.Domain, e.Referrer, e.Pathname).Inc()

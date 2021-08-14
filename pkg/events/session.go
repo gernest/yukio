@@ -45,6 +45,10 @@ var Visits = prometheus.NewGaugeVec(
 	},
 )
 
+func init() {
+	register(VisitDuration, Visits)
+}
+
 func RecordSession(s *models.Session) {
 	VisitDuration.WithLabelValues(
 		s.Domain, s.Referrer, s.EntryPage, s.ExitPage,

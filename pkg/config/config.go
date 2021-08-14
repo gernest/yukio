@@ -9,6 +9,11 @@ const DefaultSessionWindow = 3 * time.Minute
 
 type Config struct {
 	SessionWindow time.Duration
+	TimeSeries    TimeSeries
+}
+
+type TimeSeries struct {
+	FlushInterval time.Duration
 }
 
 type configKey struct{}
