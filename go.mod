@@ -15,6 +15,7 @@ require (
 	github.com/prometheus/common v0.30.0
 	github.com/prometheus/prometheus v1.8.2-0.20210813161031-bb05485c7908
 	github.com/tdewolff/minify/v2 v2.9.21
+	github.com/urfave/cli v1.22.5 // indirect
 	go.uber.org/zap v1.19.0 // indirect
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	google.golang.org/protobuf v1.27.1

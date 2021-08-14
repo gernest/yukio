@@ -3,14 +3,19 @@ package config
 import (
 	"context"
 	"time"
+
+	"github.com/dgraph-io/badger/v3"
 )
 
 const DefaultSessionWindow = 3 * time.Minute
 const DefaultFlushInterval = time.Second
+const DefaultListenPort = 8090
 
 type Config struct {
 	SessionWindow time.Duration
 	TimeSeries    TimeSeries
+	Store         badger.Options
+	ListenPort    int
 }
 
 func Default() Config {
@@ -19,6 +24,8 @@ func Default() Config {
 		TimeSeries: TimeSeries{
 			FlushInterval: DefaultFlushInterval,
 		},
+		Store:      badger.DefaultOptions("./data"),
+		ListenPort: DefaultListenPort,
 	}
 }
 

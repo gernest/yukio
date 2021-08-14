@@ -4,3 +4,4 @@ tmp/
 .yukio/
 yukio
 *.linux
+data/

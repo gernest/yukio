@@ -250,7 +250,7 @@ func Captcha(w http.ResponseWriter, r *http.Request) {
 	send(w, http.StatusOK, "captcha-xxx")
 }
 
-func AddRoute(m *mux.Router) {
+func AddRoutes(m *mux.Router) {
 	m.Use(dumpRequest)
 	m.HandleFunc("/api/currentUser", CurrentUser).Methods(http.MethodGet)
 	m.HandleFunc("/api/users", ListUsers).Methods(http.MethodGet)
