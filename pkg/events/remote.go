@@ -40,7 +40,7 @@ func WriteLoop(ctx context.Context, write remote.WriteClient, c *config.Config) 
 					zap.Error(err))
 				continue
 			}
-			s := sample(m)
+			s := createRequest(m)
 			b, err := proto.Marshal(&s)
 			if err != nil {
 				continue
@@ -54,7 +54,7 @@ func WriteLoop(ctx context.Context, write remote.WriteClient, c *config.Config) 
 	}
 }
 
-func sample(m []*dto.MetricFamily) (r prompb.WriteRequest) {
+func createRequest(m []*dto.MetricFamily) (r prompb.WriteRequest) {
 	for _, mf := range m {
 		timeseries(&r, mf)
 	}
