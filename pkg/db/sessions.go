@@ -59,8 +59,13 @@ func CreateSessionFromEvent(ctx context.Context, s *models.Session, event *model
 	})
 }
 
-func HandleSession(ctx context.Context, event *models.Event, sessionWindow time.Duration) (err error) {
+func SaveSession(ctx context.Context, event *models.Event, sessionWindow time.Duration) (ss *models.Session, err error) {
 	var os models.Session
+	defer func() {
+		if err == nil {
+			ss = &os
+		}
+	}()
 	k := gk().SessionID(event.UserID, event.Domain)
 	defer pk(k)
 	err = db.View(func(txn *badger.Txn) error {
@@ -75,7 +80,7 @@ func HandleSession(ctx context.Context, event *models.Event, sessionWindow time.
 	if err != nil {
 		if errors.Is(err, badger.ErrKeyNotFound) {
 			// This is  new event with no session
-			return CreateSessionFromEvent(ctx, &os, event)
+			err = CreateSessionFromEvent(ctx, &os, event)
 		}
 		return
 	}
@@ -90,13 +95,15 @@ func HandleSession(ctx context.Context, event *models.Event, sessionWindow time.
 		os.Duration = event.TS.Sub(os.Start)
 		os.Events++
 		os.PageViews++
-		return db.Update(func(txn *badger.Txn) error {
+		err = db.Update(func(txn *badger.Txn) error {
 			v, err := marshalSession(&os)
 			if err != nil {
 				return err
 			}
 			return txn.Set(k.Bytes(), v)
 		})
+		return
 	}
-	return CreateSessionFromEvent(ctx, &os, event)
+	err = CreateSessionFromEvent(ctx, &os, event)
+	return
 }

@@ -41,6 +41,7 @@ var Visits = prometheus.NewGaugeVec(
 		Referer,
 		Path,
 		EntryPage,
+		ExitPage,
 	},
 )
 
@@ -51,6 +52,9 @@ func RecordSession(s *models.Session) {
 	if s.IsBounce {
 		BounceRate.WithLabelValues(
 			s.Domain, s.Referrer, s.EntryPage,
-		).Add(float64(s.Events))
+		).Inc()
 	}
+	Visits.WithLabelValues(
+		s.Domain, s.Referrer, s.EntryPage, s.ExitPage,
+	).Add(float64(s.Events))
 }

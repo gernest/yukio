@@ -6,12 +6,22 @@ import (
 	"github.com/google/uuid"
 )
 
+type EventPayload struct {
+	Name     string            `json:"n"`
+	Domain   string            `json:"d"`
+	URL      string            `json:"url"`
+	HashMode bool              `json:"h"`
+	Referrer string            `json:"r"`
+	Meta     map[string]string `json:"m"`
+}
+
 type Event struct {
-	ID                     int64
 	Name                   string
 	Domain                 string
+	URL                    string
 	Hostname               string
 	Pathname               string
+	Meta                   map[string]string
 	UserID                 uuid.UUID
 	Referrer               string
 	ReferrerSource         string
