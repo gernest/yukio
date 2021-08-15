@@ -1,6 +1,5 @@
-FROM gcr.io/distroless/static:nonroot
-WORKDIR /
-COPY yukio.linux yukio
-USER nonroot:nonroot
+FROM alpine:3.14
+RUN mkdir -p /data
+COPY yukio.linux /usr/local/yukio
 
-ENTRYPOINT ["/yukio"]
+ENTRYPOINT ["/usr/local/yukio"]

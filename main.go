@@ -16,6 +16,7 @@ import (
 	"github.com/gernest/yukio/pkg/loga"
 	"github.com/gernest/yukio/pkg/web"
 	"github.com/gorilla/mux"
+	"github.com/prometheus/prometheus/storage/remote"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
@@ -64,13 +65,22 @@ func run(cliCtx *cli.Context) error {
 
 	ctx = db.SetStore(ctx, store)
 	ctx = loga.Set(ctx, zl)
+
+	writeConfig, err := o.Remote.Write.Config()
+	if err != nil {
+		return fmt.Errorf("Failed to decode  remote store write config  err:%v ", err)
+	}
+	write, err := remote.NewWriteClient("yukio-promscale", writeConfig)
+	if err != nil {
+		return fmt.Errorf("Failed to create  remote store write client  err:%v ", err)
+	}
 	m := mux.NewRouter()
 	m.Use(ContextMiddleware(ctx))
 	web.AddRoutes(m)
 	handlers.AddRoutes(m)
 	zl.Info("Starting server", zap.Int("port", o.ListenPort))
 	go func() {
-		events.WriteLoop(ctx)
+		events.WriteLoop(ctx, write, o.TimeSeries.FlushInterval)
 	}()
 	return http.ListenAndServe(fmt.Sprintf(":%d", o.ListenPort), m)
 }

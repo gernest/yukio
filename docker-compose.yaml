@@ -1,0 +1,32 @@
+version: '3.0'
+
+services:
+  db:
+    image: timescaledev/timescaledb-ha:pg12-latest
+    ports:
+      - 5432:5432/tcp
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres
+
+  yukio:
+    image: gernest/yukio:dev
+    ports:
+      - 8090:8090/tcp
+    depends_on: 
+      - promscale
+    environment:
+      Y_REMOTE_READ_URL: "http://promscale:9201/read"
+      Y_REMOTE_WRITE_URL: "http://promscale:9201/write"
+
+  promscale:
+    image: timescale/promscale:0.5.1
+    ports:
+      - 9201:9201/tcp
+    restart: on-failure
+    depends_on:
+      - db
+    environment:
+      PROMSCALE_DB_CONNECT_RETRIES: 10
+      PROMSCALE_WEB_TELEMETRY_PATH: /metrics-text
+      PROMSCALE_DB_URI: postgres://postgres:password@db:5432/postgres?sslmode=allow

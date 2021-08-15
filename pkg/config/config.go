@@ -88,10 +88,11 @@ func Flags() []cli.Flag {
 			Usage:  "remote storate url for writes",
 			EnvVar: "Y_REMOTE_WRITE_URL",
 		},
-		cli.StringFlag{
+		cli.DurationFlag{
 			Name:   "remote-write-timeout",
 			Usage:  "timeouts for remote  writes",
-			EnvVar: "Y_REMOTE_READ_TIMEOUT",
+			EnvVar: "Y_REMOTE_WRITE_TIMEOUT",
+			Value:  time.Minute,
 		},
 		cli.BoolFlag{
 			Name:   "remote-write-retry-onlimi",
@@ -107,7 +108,7 @@ func Default() Config {
 		TimeSeries: TimeSeries{
 			FlushInterval: DefaultFlushInterval,
 		},
-		Store:      badger.DefaultOptions("./data"),
+		Store:      badger.DefaultOptions("/data"),
 		ListenPort: DefaultListenPort,
 	}
 }

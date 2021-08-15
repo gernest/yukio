@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gernest/yukio/pkg/config"
 	"github.com/gernest/yukio/pkg/loga"
 	"github.com/gogo/protobuf/proto"
 	"github.com/prometheus/client_golang/prometheus"
@@ -25,10 +24,11 @@ func register(c ...prometheus.Collector) {
 	registry.MustRegister(c...)
 }
 
-func WriteLoop(ctx context.Context, write remote.WriteClient, c *config.Config) {
-	tick := time.NewTicker(c.TimeSeries.FlushInterval)
+func WriteLoop(ctx context.Context, write remote.WriteClient, flush time.Duration) {
+	tick := time.NewTicker(flush)
 	defer tick.Stop()
 	log := loga.Get(ctx).Named("ts-write-loop")
+	log.Info("started write loop for events")
 	for {
 		select {
 		case <-ctx.Done():
@@ -41,6 +41,9 @@ func WriteLoop(ctx context.Context, write remote.WriteClient, c *config.Config) 
 				continue
 			}
 			s := createRequest(m)
+			if s.Size() == 0 {
+				continue
+			}
 			b, err := proto.Marshal(&s)
 			if err != nil {
 				continue
@@ -79,21 +82,21 @@ func metaType(a dto.MetricType) prompb.MetricMetadata_MetricType {
 func timeseries(r *prompb.WriteRequest, m *dto.MetricFamily) {
 	switch m.GetType() {
 	case dto.MetricType_COUNTER:
-		counter(r, m, m.GetMetric())
+		counter(r, m)
 	case dto.MetricType_GAUGE:
-		gauge(r, m, m.GetMetric())
+		gauge(r, m)
 	case dto.MetricType_SUMMARY:
-		summary(r, m, m.GetMetric())
+		summary(r, m)
 	case dto.MetricType_HISTOGRAM:
-		histogram(r, m, m.GetMetric())
+		histogram(r, m)
 	default:
-		untyped(r, m.GetMetric())
+		untyped(r, m)
 	}
 }
 
-func counter(r *prompb.WriteRequest, f *dto.MetricFamily, m []*dto.Metric) {
+func counter(r *prompb.WriteRequest, f *dto.MetricFamily) {
 	var ts prompb.TimeSeries
-	for _, s := range m {
+	for _, s := range f.GetMetric() {
 		v := s.GetCounter()
 		if v == nil {
 			return
@@ -113,9 +116,9 @@ func counter(r *prompb.WriteRequest, f *dto.MetricFamily, m []*dto.Metric) {
 	r.Timeseries = append(r.Timeseries, ts)
 }
 
-func gauge(r *prompb.WriteRequest, f *dto.MetricFamily, m []*dto.Metric) {
+func gauge(r *prompb.WriteRequest, f *dto.MetricFamily) {
 	var ts prompb.TimeSeries
-	for _, s := range m {
+	for _, s := range f.GetMetric() {
 		v := s.GetCounter()
 		if v == nil {
 			return
@@ -135,9 +138,9 @@ func gauge(r *prompb.WriteRequest, f *dto.MetricFamily, m []*dto.Metric) {
 	r.Timeseries = append(r.Timeseries, ts)
 }
 
-func summary(r *prompb.WriteRequest, f *dto.MetricFamily, m []*dto.Metric) {
+func summary(r *prompb.WriteRequest, f *dto.MetricFamily) {
 	var ts, sum, count prompb.TimeSeries
-	for _, s := range m {
+	for _, s := range f.GetMetric() {
 		v := s.GetSummary()
 		if v == nil {
 			return
@@ -177,9 +180,9 @@ func summary(r *prompb.WriteRequest, f *dto.MetricFamily, m []*dto.Metric) {
 	r.Timeseries = append(r.Timeseries, count)
 }
 
-func histogram(r *prompb.WriteRequest, f *dto.MetricFamily, m []*dto.Metric) {
+func histogram(r *prompb.WriteRequest, f *dto.MetricFamily) {
 	var ts, sum, count prompb.TimeSeries
-	for _, s := range m {
+	for _, s := range f.GetMetric() {
 		v := s.GetHistogram()
 		if v == nil {
 			return
@@ -230,9 +233,9 @@ func histogram(r *prompb.WriteRequest, f *dto.MetricFamily, m []*dto.Metric) {
 	r.Timeseries = append(r.Timeseries, count)
 }
 
-func untyped(r *prompb.WriteRequest, m []*dto.Metric) {
+func untyped(r *prompb.WriteRequest, f *dto.MetricFamily) {
 	var ts prompb.TimeSeries
-	for _, s := range m {
+	for _, s := range f.GetMetric() {
 		v := s.GetCounter()
 		if v == nil {
 			return
