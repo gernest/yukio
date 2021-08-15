@@ -263,6 +263,8 @@ func AddRoutes(m *mux.Router) {
 	m.HandleFunc("/api/403", E403).Methods(http.MethodGet)
 	m.HandleFunc("/api/403", E403).Methods(http.MethodGet)
 	m.HandleFunc("/api/login/captcha", Captcha).Methods(http.MethodGet)
+	m.HandleFunc("/api/notices", GetNotice).Methods(http.MethodGet)
+	m.HandleFunc("/api/rule", GetRule).Methods(http.MethodGet)
 }
 
 func dumpRequest(h http.Handler) http.Handler {
