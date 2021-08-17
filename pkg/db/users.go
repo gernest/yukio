@@ -93,7 +93,7 @@ func GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	return &u, nil
 }
 
-func GetUserByDomainl(ctx context.Context, domain string) (*models.User, error) {
+func GetUserByDomain(ctx context.Context, domain string) (*models.User, error) {
 	var u models.User
 	err := get(ctx, func(k *Key) { k.Domain(domain) }, &u)
 	if err != nil {

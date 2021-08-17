@@ -77,7 +77,7 @@ func run(cliCtx *cli.Context) error {
 	m := mux.NewRouter()
 	m.Use(ContextMiddleware(ctx))
 	web.AddRoutes(m)
-	handlers.AddRoutes(m)
+	handlers.AddRoutes(m, zl)
 	zl.Info("Starting server", zap.Int("port", o.ListenPort))
 	go func() {
 		events.WriteLoop(ctx, write, o.TimeSeries.FlushInterval)
