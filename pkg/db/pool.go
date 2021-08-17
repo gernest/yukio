@@ -3,6 +3,7 @@ package db
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"sync"
 
 	"github.com/dgraph-io/badger/v3"
@@ -16,6 +17,7 @@ var (
 	UsersID     = []byte("/u/i/")
 	UsersEmail  = []byte("/u/e/")
 	SiteSession = []byte("/s/s/")
+	SiteHash    = []byte("/s/h/")
 	Domains     = []byte("/d/")
 )
 
@@ -35,16 +37,23 @@ func (k *Key) UserEmail(email string) *Key {
 	return k
 }
 
-func (k *Key) SessionID(userID []byte, domain string) *Key {
+func (k *Key) SessionID(userID uint64, domain string) *Key {
 	k.Write(SiteSession[:])
-	k.Write(userID[:])
 	k.WriteString(domain)
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, userID)
+	k.Write(b)
 	return k
 }
 
 func (k *Key) Domain(domain string) *Key {
 	k.Write(Domains)
 	k.WriteString(domain)
+	return k
+}
+
+func (k *Key) Hash() *Key {
+	k.Write(SiteHash)
 	return k
 }
 

@@ -20,7 +20,7 @@ message Event {
   string hostname = 3;
   string pathname = 4;
   map<string, string> meta = 5;
-  bytes user_id = 6;
+  uint64 user_id = 6;
   string referrer = 7;
   string referrer_source = 8;
   string utm_medium = 9;

@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/danrl/golibby v0.0.0-20200502212203-95ee068c79eb
+	github.com/dchest/siphash v1.2.2 // indirect
 	github.com/dgraph-io/badger/v3 v3.2103.1
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.2

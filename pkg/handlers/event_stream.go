@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -30,23 +31,13 @@ func Events(log *zap.Logger) http.HandlerFunc {
 		if err != nil {
 			return
 		}
-		// we only accept events for registered domains.
-		usr, err := db.GetUserByDomain(ctx, p.Domain)
-		if err != nil {
-			if db.IsNotFound(err) {
-				eventSLog.Error("Failed getting user of the domain",
-					zap.String("domain", p.Domain),
-					zap.Error(err),
-				)
-			}
-			return
-		}
+
 		uri, err := url.Parse(p.URL)
 		if err != nil {
 			return
 		}
 		query := uri.Query()
-		ref := parseRefer(uri, p.Referrer)
+		ref := ParseRefer(uri, p.Referrer)
 		path := uri.Path
 		if p.HashMode && uri.Fragment != "" {
 			path += "#" + uri.Fragment
@@ -69,7 +60,6 @@ func Events(log *zap.Logger) http.HandlerFunc {
 		e := &models.Event{
 			Timestamp:      ptypes.TimestampNow(),
 			Name:           p.Name,
-			UserId:         usr.Id,
 			Hostname:       cleanHost(uri.Host),
 			Pathname:       path,
 			ReferrerSource: refSource,
@@ -80,20 +70,34 @@ func Events(log *zap.Logger) http.HandlerFunc {
 			Meta:           p.Meta,
 		}
 		settings := config.Get(ctx)
-		s, err := db.SaveSession(ctx, e, settings.SessionWindow)
-		if err != nil {
-			eventSLog.Error("Failed to save session",
-				zap.String("domain", e.Domain),
-				zap.String("event_name", e.Name),
+		for _, domain := range GetDomains(r.URL, p.Domain) {
+			userID, err := db.GenerateUserID(ctx,
+				GetRemoteIP(r), r.UserAgent(), domain, e.Hostname,
 			)
-			return
+			if err != nil {
+				eventSLog.Error("Failed generate id for the domain",
+					zap.String("domain", p.Domain),
+					zap.Error(err),
+				)
+				return
+			}
+			e.UserId = userID
+			e.Domain = domain
+			s, err := db.SaveSession(ctx, e, settings.SessionWindow)
+			if err != nil {
+				eventSLog.Error("Failed to save session",
+					zap.String("domain", e.Domain),
+					zap.String("event_name", e.Name),
+				)
+				return
+			}
+			events.Record(ctx, e)
+			events.RecordSession(s)
 		}
-		events.Record(ctx, e)
-		events.RecordSession(s)
 	})
 }
 
-func parseRefer(uri *url.URL, r string) refparse.Referrer {
+func ParseRefer(uri *url.URL, r string) refparse.Referrer {
 	if r == "" {
 		return refparse.Referrer{}
 	}
@@ -119,4 +123,42 @@ func cleanHost(h string) string {
 
 func AddRoutes(m *mux.Router, log *zap.Logger) {
 	m.HandleFunc("/api/events", Events(log))
+}
+
+func GetRemoteIP(r *http.Request) string {
+	var raw string
+	switch {
+	case r.Header.Get("X-Real-IP") != "":
+		raw = r.Header.Get("X-Real-IP")
+	case r.Header.Get("X-Forwarded-For") != "":
+		raw = r.Header.Get("X-Forwarded-For")
+	case r.Header.Get("X-Client-IP") != "":
+		raw = r.Header.Get("X-Client-IP")
+	case r.RemoteAddr != "":
+		raw = r.RemoteAddr
+	}
+	var host string
+	host, _, err := net.SplitHostPort(raw)
+	if err != nil {
+		host = raw
+	}
+
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return "-"
+	}
+	return ip.String()
+}
+
+func GetDomains(r *url.URL, domains string) []string {
+	if domains == "" {
+		return []string{
+			cleanHost(r.Host),
+		}
+	}
+	parts := strings.Split(domains, ",")
+	for i := 0; i < len(parts); i++ {
+		parts[i] = cleanHost(parts[i])
+	}
+	return parts
 }
