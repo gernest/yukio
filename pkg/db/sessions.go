@@ -7,6 +7,8 @@ import (
 
 	"github.com/dgraph-io/badger/v3"
 	"github.com/gernest/yukio/pkg/models"
+	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/proto"
 )
 
 func resetSession(s *models.Session, e *models.Event) *models.Session {
@@ -24,33 +26,25 @@ func resetSession(s *models.Session, e *models.Event) *models.Session {
 	s.Events = 1
 	s.Referrer = e.Referrer
 	s.ReferrerSource = e.ReferrerSource
-	s.UTMMedium = e.UTMMedium
-	s.UTMSource = e.UTMSource
-	s.UTMCampaign = e.UTMCampaign
+	s.UtmMedium = e.UtmMedium
+	s.UtmSource = e.UtmSource
+	s.UtmCampaign = e.UtmCampaign
 	s.CountryCode = e.CountryCode
 	s.ScreenSize = e.ScreenSize
 	s.OperatingSystem = e.OperatingSystem
 	s.OperatingSystemVersion = e.OperatingSystemVersion
 	s.Browser = e.Browser
 	s.BrowserVersion = e.BrowserVersion
-	s.TS = e.TS
-	s.Start = e.TS
+	s.Timestamp = e.Timestamp
+	s.Start = e.Timestamp
 	return s
-}
-
-func marshalSession(s *models.Session) ([]byte, error) {
-	return nil, nil
-}
-
-func unmarshalSession(b []byte, v interface{}) error {
-	return nil
 }
 
 func CreateSessionFromEvent(ctx context.Context, s *models.Session, event *models.Event) error {
 	resetSession(s, event)
-	k := gk().SessionID(event.UserID, event.Domain)
+	k := gk().SessionID(event.UserId, event.Domain)
 	defer pk(k)
-	v, err := marshalSession(s)
+	v, err := proto.Marshal(s)
 	if err != nil {
 		return err
 	}
@@ -66,7 +60,7 @@ func SaveSession(ctx context.Context, event *models.Event, sessionWindow time.Du
 			ss = &os
 		}
 	}()
-	k := gk().SessionID(event.UserID, event.Domain)
+	k := gk().SessionID(event.UserId, event.Domain)
 	defer pk(k)
 	err = GetStore(ctx).View(func(txn *badger.Txn) error {
 		x, err := txn.Get(k.Bytes())
@@ -74,7 +68,7 @@ func SaveSession(ctx context.Context, event *models.Event, sessionWindow time.Du
 			return err
 		}
 		return x.Value(func(val []byte) error {
-			return unmarshalSession(val, &os)
+			return proto.Unmarshal(val, &os)
 		})
 	})
 	if err != nil {
@@ -84,19 +78,22 @@ func SaveSession(ctx context.Context, event *models.Event, sessionWindow time.Du
 		}
 		return
 	}
-	active := event.TS.Sub(os.TS) < sessionWindow
+	osts, _ := ptypes.Timestamp(os.Timestamp)
+	evts, _ := ptypes.Timestamp(event.Timestamp)
+	active := evts.Sub(osts) < sessionWindow
 	if active {
 		var pageView int32
 		if event.Name == "pageview" {
 			pageView++
 		}
-		os.TS = event.TS
+		os.Timestamp = event.Timestamp
 		os.ExitPage = event.Pathname
-		os.Duration = event.TS.Sub(os.Start)
+		osstartss, _ := ptypes.Timestamp(os.Start)
+		os.Duration = ptypes.DurationProto(evts.Sub(osstartss))
 		os.Events++
 		os.PageViews++
 		err = GetStore(ctx).Update(func(txn *badger.Txn) error {
-			v, err := marshalSession(&os)
+			v, err := proto.Marshal(&os)
 			if err != nil {
 				return err
 			}

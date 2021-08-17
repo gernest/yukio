@@ -1,6 +1,8 @@
 syntax = "proto3";
 
 option go_package = "github.com/gernest/yukio/pkg/models";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
 
 message User {
   bytes id = 1;
@@ -11,3 +13,49 @@ message User {
 }
 
 message Domain { string name = 1; }
+
+message Event {
+  string name = 1;
+  string domain = 2;
+  string hostname = 3;
+  string pathname = 4;
+  map<string, string> meta = 5;
+  bytes user_id = 6;
+  string referrer = 7;
+  string referrer_source = 8;
+  string utm_medium = 9;
+  string utm_source = 10;
+  string utm_campaign = 11;
+  string country_code = 12;
+  string screen_size = 13;
+  string operating_system = 14;
+  string operating_system_version = 15;
+  string browser = 16;
+  string browser_version = 17;
+  google.protobuf.Timestamp timestamp = 18;
+}
+
+message Session {
+  int32 sign = 1;
+  string domain = 2;
+  string hostname = 3;
+  bool is_bounce = 4;
+  string entry_page = 5;
+  string exit_page = 6;
+  int32 page_views = 7;
+  int32 events = 8;
+  google.protobuf.Duration duration = 9;
+  string referrer = 10;
+  string referrer_source = 11;
+  string utm_medium = 12;
+  string utm_source = 13;
+  string utm_campaign = 14;
+  string country_code = 15;
+  string screen_size = 16;
+  string operating_system = 17;
+  string operating_system_version = 18;
+  string browser = 19;
+  string browser_version = 20;
+  google.protobuf.Timestamp start = 21;
+  google.protobuf.Timestamp timestamp = 22;
+}

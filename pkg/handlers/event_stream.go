@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/gernest/yukio/pkg/config"
 	"github.com/gernest/yukio/pkg/db"
 	"github.com/gernest/yukio/pkg/events"
 	"github.com/gernest/yukio/pkg/models"
 	"github.com/gernest/yukio/pkg/refparse"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/gorilla/mux"
 	ua "github.com/mileusna/useragent"
 )
@@ -52,15 +52,15 @@ func Events(w http.ResponseWriter, r *http.Request) {
 		referrer = cp.String()
 	}
 	e := &models.Event{
-		TS:             time.Now(),
+		Timestamp:      ptypes.TimestampNow(),
 		Name:           p.Name,
 		Hostname:       cleanHost(uri.Host),
 		Pathname:       path,
 		ReferrerSource: refSource,
 		Referrer:       referrer,
-		UTMMedium:      query.Get("utm_medium"),
-		UTMSource:      query.Get("utm_source"),
-		UTMCampaign:    query.Get("utm_campaign"),
+		UtmMedium:      query.Get("utm_medium"),
+		UtmSource:      query.Get("utm_source"),
+		UtmCampaign:    query.Get("utm_campaign"),
 		Meta:           p.Meta,
 	}
 	ctx := r.Context()

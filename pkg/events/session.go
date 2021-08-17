@@ -2,6 +2,7 @@ package events
 
 import (
 	"github.com/gernest/yukio/pkg/models"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -50,9 +51,10 @@ func init() {
 }
 
 func RecordSession(s *models.Session) {
+	duration, _ := ptypes.Duration(s.Duration)
 	VisitDuration.WithLabelValues(
 		s.Domain, s.Referrer, s.EntryPage, s.ExitPage,
-	).Observe(float64(s.Duration.Milliseconds()))
+	).Observe(float64(duration.Milliseconds()))
 	if s.IsBounce {
 		BounceRate.WithLabelValues(
 			s.Domain, s.Referrer, s.EntryPage,

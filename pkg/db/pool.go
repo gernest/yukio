@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/dgraph-io/badger/v3"
-	"github.com/google/uuid"
 )
 
 var pool = &sync.Pool{
@@ -36,7 +35,7 @@ func (k *Key) UserEmail(email string) *Key {
 	return k
 }
 
-func (k *Key) SessionID(userID uuid.UUID, domain string) *Key {
+func (k *Key) SessionID(userID []byte, domain string) *Key {
 	k.Write(SiteSession[:])
 	k.Write(userID[:])
 	k.WriteString(domain)
