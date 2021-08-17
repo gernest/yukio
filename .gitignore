@@ -5,3 +5,4 @@ tmp/
 yukio
 *.linux
 data/
+bin/

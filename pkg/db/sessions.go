@@ -88,8 +88,8 @@ func SaveSession(ctx context.Context, event *models.Event, sessionWindow time.Du
 		}
 		os.Timestamp = event.Timestamp
 		os.ExitPage = event.Pathname
-		osstartss, _ := ptypes.Timestamp(os.Start)
-		os.Duration = ptypes.DurationProto(evts.Sub(osstartss))
+		startTS, _ := ptypes.Timestamp(os.Start)
+		os.Duration = ptypes.DurationProto(evts.Sub(startTS))
 		os.Events++
 		os.PageViews++
 		err = GetStore(ctx).Update(func(txn *badger.Txn) error {

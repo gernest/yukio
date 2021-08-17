@@ -6,3 +6,6 @@ build:
 
 up: build
 	docker-compose up
+
+build-tools:
+	go build -o bin/load ./tools/load
