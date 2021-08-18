@@ -125,16 +125,18 @@ func AddRoutes(m *mux.Router, log *zap.Logger) {
 	m.HandleFunc("/api/events", Events(log))
 }
 
+var remoteIPHeaders = []string{
+	"X-Real-IP", "X-Forwarded-For", "X-Client-IP",
+}
+
 func GetRemoteIP(r *http.Request) string {
 	var raw string
-	switch {
-	case r.Header.Get("X-Real-IP") != "":
-		raw = r.Header.Get("X-Real-IP")
-	case r.Header.Get("X-Forwarded-For") != "":
-		raw = r.Header.Get("X-Forwarded-For")
-	case r.Header.Get("X-Client-IP") != "":
-		raw = r.Header.Get("X-Client-IP")
-	case r.RemoteAddr != "":
+	for _, v := range remoteIPHeaders {
+		if raw = r.Header.Get(v); raw != "" {
+			break
+		}
+	}
+	if raw == "" && r.RemoteAddr != "" {
 		raw = r.RemoteAddr
 	}
 	var host string
