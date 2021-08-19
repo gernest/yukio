@@ -14,11 +14,12 @@ var pool = &sync.Pool{
 }
 
 var (
-	UsersID     = []byte("/u/i/")
-	UsersEmail  = []byte("/u/e/")
-	SiteSession = []byte("/s/s/")
-	SiteHash    = []byte("/s/h/")
-	Domains     = []byte("/d/")
+	UsersID      = []byte("/u/i/")
+	UsersEmail   = []byte("/u/e/")
+	SiteSession  = []byte("/s/s/")
+	SessionLease = []byte("/s/l/")
+	SiteHash     = []byte("/s/h/")
+	Domains      = []byte("/d/")
 )
 
 type Key struct {
@@ -90,4 +91,8 @@ func Set(ctx context.Context, value []byte, keys ...*Key) error {
 		}
 		return nil
 	})
+}
+
+func Session(ctx context.Context) {
+
 }

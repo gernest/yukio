@@ -16,6 +16,7 @@ const (
 	EntryPage       = "entry_page"
 	ExitPage        = "exit_page"
 	UserID          = "user_id"
+	SessionID       = "session_id"
 )
 
 var PageView = prometheus.NewCounterVec(
@@ -53,7 +54,7 @@ func Record(ctx context.Context, e *models.Event) {
 	if e.Name == "pageview" {
 		PageView.WithLabelValues(
 			e.Domain,
-			strconv.FormatUint(e.UserId, 64),
+			formatNumber(e.UserId),
 			e.Referrer,
 			e.Pathname,
 		).Inc()
@@ -61,9 +62,13 @@ func Record(ctx context.Context, e *models.Event) {
 		Custom.WithLabelValues(
 			e.Name,
 			e.Domain,
-			strconv.FormatUint(e.UserId, 64),
+			formatNumber(e.UserId),
 			e.Referrer,
 			e.Pathname,
 		).Inc()
 	}
+}
+
+func formatNumber(n uint64) string {
+	return strconv.FormatUint(n, 10)
 }

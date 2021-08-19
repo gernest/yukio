@@ -24,16 +24,23 @@ func Events(log *zap.Logger) http.HandlerFunc {
 		ctx := r.Context()
 		ux := ua.Parse(r.UserAgent())
 		if ux.Bot {
+			log.Info("Skipping bot")
 			return
 		}
 		var p models.EventPayload
 		err := json.NewDecoder(r.Body).Decode(&p)
 		if err != nil {
+			log.Error("Failed to decode ",
+				zap.Error(err),
+			)
 			return
 		}
 
 		uri, err := url.Parse(p.URL)
 		if err != nil {
+			log.Error("Failed to decode ",
+				zap.Error(err),
+			)
 			return
 		}
 		query := uri.Query()

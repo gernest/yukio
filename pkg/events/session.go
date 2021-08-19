@@ -13,6 +13,7 @@ var VisitDuration = prometheus.NewHistogramVec(
 	},
 	[]string{
 		Domain,
+		SessionID,
 		Referer,
 		EntryPage,
 		ExitPage,
@@ -26,8 +27,8 @@ var BounceRate = prometheus.NewCounterVec(
 	},
 	[]string{
 		Domain,
+		SessionID,
 		Referer,
-		Path,
 		EntryPage,
 	},
 )
@@ -39,8 +40,8 @@ var Visits = prometheus.NewGaugeVec(
 	},
 	[]string{
 		Domain,
+		SessionID,
 		Referer,
-		Path,
 		EntryPage,
 		ExitPage,
 	},
@@ -52,15 +53,27 @@ func init() {
 
 func RecordSession(s *models.Session) {
 	duration, _ := ptypes.Duration(s.Duration)
+	id := formatNumber(s.Id)
 	VisitDuration.WithLabelValues(
-		s.Domain, s.Referrer, s.EntryPage, s.ExitPage,
+		s.Domain,
+		id,
+		s.Referrer,
+		s.EntryPage,
+		s.ExitPage,
 	).Observe(float64(duration.Milliseconds()))
 	if s.IsBounce {
 		BounceRate.WithLabelValues(
-			s.Domain, s.Referrer, s.EntryPage,
+			s.Domain,
+			id,
+			s.Referrer,
+			s.EntryPage,
 		).Inc()
 	}
 	Visits.WithLabelValues(
-		s.Domain, s.Referrer, s.EntryPage, s.ExitPage,
+		s.Domain,
+		id,
+		s.Referrer,
+		s.EntryPage,
+		s.ExitPage,
 	).Add(float64(s.Events))
 }

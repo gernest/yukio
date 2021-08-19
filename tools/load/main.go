@@ -17,7 +17,7 @@ func main() {
 	flag.Parse()
 	target = Endpoint(*t)
 	ctx, _ := context.WithTimeout(context.Background(), *d)
-	Run(ctx)
+	Run(ctx, NewPlain())
 }
 
 type ExecContext interface {
@@ -29,6 +29,7 @@ type ExecContext interface {
 func Run(ctx context.Context, ls ...ExecContext) {
 	var wg sync.WaitGroup
 	for _, e := range ls {
+		wg.Add(1)
 		go exec(ctx, e, &wg)
 	}
 	wg.Wait()
@@ -37,7 +38,6 @@ func Run(ctx context.Context, ls ...ExecContext) {
 func exec(ctx context.Context, e ExecContext, wg *sync.WaitGroup) {
 	l := zap.L().Named(e.Name())
 	l.Info("Start execution")
-	wg.Add(1)
 	defer func() {
 		wg.Done()
 		l.Info("Done")

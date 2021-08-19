@@ -33,6 +33,7 @@ message Event {
   string browser = 16;
   string browser_version = 17;
   google.protobuf.Timestamp timestamp = 18;
+  uint64 session_id = 19;
 }
 
 message Session {
@@ -58,4 +59,5 @@ message Session {
   string browser_version = 20;
   google.protobuf.Timestamp start = 21;
   google.protobuf.Timestamp timestamp = 22;
+  uint64 id = 23;
 }

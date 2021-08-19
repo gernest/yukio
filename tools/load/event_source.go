@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"sync"
 )
@@ -50,7 +51,8 @@ func NewPaths(base Source, paths ...string) Source {
 		ls = append(ls, v)
 	}
 	return &ListSource{
-		Items: ls,
+		Items:  ls,
+		Source: base,
 		Modify: func(e *EventPayload, v interface{}) {
 			e.URL += v.(string)
 		},
@@ -65,7 +67,7 @@ type ListSource struct {
 }
 
 func (p *ListSource) Next() *EventPayload {
-	if p.idx < len(p.Items) {
+	if p.idx < len(p.Items)-1 {
 		p.idx++
 	} else {
 		p.idx = 0
@@ -94,6 +96,7 @@ func (e Endpoint) Do(ctx context.Context, body *EventPayload) (*http.Response, e
 		b.Reset()
 		buf.Put(b)
 	}()
+	json.NewEncoder(b).Encode(body)
 	r, err := http.NewRequestWithContext(ctx, http.MethodPost, string(e), b)
 	if err != nil {
 		return nil, err

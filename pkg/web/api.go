@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httputil"
 
 	"github.com/gorilla/mux"
 )
@@ -269,8 +268,7 @@ func AddRoutes(m *mux.Router) {
 
 func dumpRequest(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		b, _ := httputil.DumpRequest(r, true)
-		fmt.Println(string(b))
+		fmt.Println(r.Method, r.URL.Path)
 		h.ServeHTTP(w, r)
 	})
 }

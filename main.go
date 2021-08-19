@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 
@@ -63,8 +64,10 @@ func run(cliCtx *cli.Context) error {
 	}
 	defer zl.Sync()
 
+	// set values passed through the context
 	ctx = db.SetStore(ctx, store)
 	ctx = loga.Set(ctx, zl)
+	ctx = config.Set(ctx, o)
 
 	writeConfig, err := o.Remote.Write.Config()
 	if err != nil {
@@ -82,7 +85,12 @@ func run(cliCtx *cli.Context) error {
 	go func() {
 		events.WriteLoop(ctx, write, o.TimeSeries.FlushInterval)
 	}()
-	return http.ListenAndServe(fmt.Sprintf(":%d", o.ListenPort), m)
+	svr := &http.Server{
+		Handler:     m,
+		Addr:        fmt.Sprintf(":%d", o.ListenPort),
+		BaseContext: func(l net.Listener) context.Context { return ctx },
+	}
+	return svr.ListenAndServe()
 }
 
 func ContextMiddleware(ctx context.Context) func(http.Handler) http.Handler {

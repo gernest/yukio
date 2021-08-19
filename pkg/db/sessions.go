@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/dgraph-io/badger/v3"
@@ -10,6 +11,24 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"google.golang.org/protobuf/proto"
 )
+
+var sequences = &sync.Map{}
+
+const LeaseSize = uint64(1000)
+
+var sessionIndex *badger.Sequence
+
+func GetSessionID(ctx context.Context) (uint64, error) {
+	if sessionIndex != nil {
+		return sessionIndex.Next()
+	}
+	var err error
+	sessionIndex, err = GetStore(ctx).GetSequence(SessionLease, LeaseSize)
+	if err != nil {
+		return 0, err
+	}
+	return sessionIndex.Next()
+}
 
 func resetSession(s *models.Session, e *models.Event) *models.Session {
 	var pageview int32
@@ -41,6 +60,12 @@ func resetSession(s *models.Session, e *models.Event) *models.Session {
 }
 
 func CreateSessionFromEvent(ctx context.Context, s *models.Session, event *models.Event) error {
+	id, err := GetSessionID(ctx)
+	if err != nil {
+		return err
+	}
+	s.Id = id
+	event.SessionId = id
 	resetSession(s, event)
 	k := gk().SessionID(event.UserId, event.Domain)
 	defer pk(k)
