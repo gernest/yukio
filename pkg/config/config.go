@@ -24,9 +24,20 @@ type Config struct {
 	ListenPort    int
 }
 
+type QueryConfig struct {
+	Limits QueryLimits
+}
+
+type QueryLimits struct {
+	Sample       int
+	Concurrency  int
+	BytesInFrame int
+}
+
 type Remote struct {
 	Read  RemoteConfig
 	Write RemoteConfig
+	Query QueryConfig
 }
 
 type RemoteConfig struct {

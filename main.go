@@ -77,6 +77,17 @@ func run(cliCtx *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("Failed to create  remote store write client  err:%v ", err)
 	}
+
+	readConfig, err := o.Remote.Read.Config()
+	if err != nil {
+		return fmt.Errorf("Failed to decode  remote store read config  err:%v ", err)
+	}
+	read, err := remote.NewReadClient("yukio-promscale", readConfig)
+	if err != nil {
+		return fmt.Errorf("Failed to create  remote store write client  err:%v ", err)
+	}
+	ctx = events.SetupQuery(ctx, zl, read)
+
 	m := mux.NewRouter()
 	m.Use(ContextMiddleware(ctx))
 	web.AddRoutes(m)

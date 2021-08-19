@@ -13,6 +13,8 @@ import (
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/prompb"
+	"github.com/prometheus/prometheus/promql"
+	"github.com/prometheus/prometheus/storage"
 	"github.com/prometheus/prometheus/storage/remote"
 	"go.uber.org/zap"
 )
@@ -300,4 +302,67 @@ func writeLabelPairs(
 		})
 	}
 	return
+}
+
+type Engine struct {
+	Queryable storage.Queryable
+	Engine    *promql.Engine
+}
+
+type engineKey struct{}
+
+func SetupQuery(ctx context.Context, log *zap.Logger, read remote.ReadClient) context.Context {
+	chunk := remote.NewSampleAndChunkQueryableClient(
+		read, nil, nil, false, startTime,
+	)
+	engine := promql.NewEngine(promql.EngineOpts{})
+	return context.WithValue(ctx, engineKey{}, &Engine{
+		Queryable: chunk,
+		Engine:    engine,
+	})
+}
+
+type QueryRequest struct {
+	Timestamp time.Time
+	Query     string
+}
+
+func InstantQuery(ctx context.Context, req *QueryRequest) (*promql.Result, error) {
+	e := get(ctx)
+	q, err := e.Engine.NewInstantQuery(e.Queryable, req.Query, req.Timestamp)
+	if err != nil {
+		return nil, err
+	}
+	res := q.Exec(ctx)
+	if res.Err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func startTime() (int64, error) {
+	return int64(model.Latest), nil
+}
+
+type QueryRangeRequest struct {
+	Start, End time.Time
+	Query      string
+	Step       time.Duration
+}
+
+func RangeQuery(ctx context.Context, req *QueryRangeRequest) (*promql.Result, error) {
+	e := get(ctx)
+	q, err := e.Engine.NewRangeQuery(e.Queryable, req.Query, req.Start, req.End, req.Step)
+	if err != nil {
+		return nil, err
+	}
+	res := q.Exec(ctx)
+	if res.Err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func get(ctx context.Context) *Engine {
+	return ctx.Value(engineKey{}).(*Engine)
 }
