@@ -19,9 +19,17 @@ const (
 	SessionID       = "session_id"
 )
 
+type metricname string
+
+const (
+	pageView    = metricname("page_view")
+	customEvent = metricname("custom_event")
+	visitors    = metricname("visitors")
+)
+
 var PageView = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
-		Name: "page_view",
+		Name: string(pageView),
 		Help: "Counts total page views",
 	},
 	[]string{
@@ -34,7 +42,7 @@ var PageView = prometheus.NewCounterVec(
 
 var Custom = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
-		Name: "custom_event",
+		Name: string(customEvent),
 		Help: "Counts custom event",
 	},
 	[]string{
@@ -71,4 +79,14 @@ func Record(ctx context.Context, e *models.Event) {
 
 func formatNumber(n uint64) string {
 	return strconv.FormatUint(n, 10)
+}
+
+func eventsSeries(m ...string) (r []metricname) {
+	for _, v := range m {
+		switch metricname(v) {
+		case pageView, visits, bounceRate:
+			r = append(r, metricname(v))
+		}
+	}
+	return
 }

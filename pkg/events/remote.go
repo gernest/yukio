@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"errors"
 	"math"
 	"strconv"
 	"time"
@@ -348,6 +349,16 @@ type QueryRangeRequest struct {
 	Start, End time.Time
 	Query      string
 	Step       time.Duration
+}
+
+func (q *QueryRangeRequest) Validate() error {
+	if q.End.Before(q.Start) {
+		return errors.New("end time should not be before start time")
+	}
+	if q.Step <= 0 {
+		return errors.New("zero or negative query resolution step widths are not accepted")
+	}
+	return nil
 }
 
 func RangeQuery(ctx context.Context, req *QueryRangeRequest) (*promql.Result, error) {

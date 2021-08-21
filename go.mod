@@ -12,6 +12,7 @@ require (
 	github.com/golang/snappy v0.0.4
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
+	github.com/jinzhu/now v1.1.2 // indirect
 	github.com/mileusna/useragent v1.0.2
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/client_model v0.2.0

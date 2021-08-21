@@ -6,6 +6,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+const (
+	visitDuration = metricname("visit_duration")
+	visits        = metricname("visits")
+	bounceRate    = metricname("bounce_rate")
+)
+
 var VisitDuration = prometheus.NewHistogramVec(
 	prometheus.HistogramOpts{
 		Name: "visit_duration",
@@ -76,4 +82,14 @@ func RecordSession(s *models.Session) {
 		s.EntryPage,
 		s.ExitPage,
 	).Add(float64(s.Events))
+}
+
+func sessionSeries(m ...string) (r []metricname) {
+	for _, v := range m {
+		switch metricname(v) {
+		case visitDuration, visits, bounceRate:
+			r = append(r, metricname(v))
+		}
+	}
+	return
 }
