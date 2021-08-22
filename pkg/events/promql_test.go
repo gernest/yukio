@@ -5,15 +5,20 @@ import (
 	"time"
 )
 
-func TestQuery(t *testing.T) {
+const Yukio = "yukio.co.tz"
+
+func testNowFunc(t *testing.T) func() time.Time {
 	ts, err := time.Parse(time.RFC822Z, time.RFC822Z)
 	if err != nil {
 		t.Fatal(err)
 	}
 	ts = ts.UTC()
-	nowFunc := func() time.Time {
+	return func() time.Time {
 		return ts
 	}
+}
+func TestQuery(t *testing.T) {
+	nowFunc := testNowFunc(t)
 	sample := []struct {
 		period   Period
 		duration int //in days

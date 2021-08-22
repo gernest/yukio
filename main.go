@@ -15,6 +15,7 @@ import (
 	"github.com/gernest/yukio/pkg/events"
 	"github.com/gernest/yukio/pkg/handlers"
 	"github.com/gernest/yukio/pkg/loga"
+	"github.com/gernest/yukio/pkg/stats"
 	"github.com/gernest/yukio/pkg/web"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/prometheus/storage/remote"
@@ -92,6 +93,7 @@ func run(cliCtx *cli.Context) error {
 	m.Use(ContextMiddleware(ctx))
 	web.AddRoutes(m)
 	handlers.AddRoutes(m, zl)
+	stats.AddRoutes(m)
 	zl.Info("Starting server", zap.Int("port", o.ListenPort))
 	go func() {
 		events.WriteLoop(ctx, write, o.TimeSeries.FlushInterval)

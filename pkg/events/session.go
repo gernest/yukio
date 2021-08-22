@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	visitDuration = metricname("visit_duration")
-	visits        = metricname("visits")
-	bounceRate    = metricname("bounce_rate")
+	visitDuration = metricName("visit_duration")
+	visits        = metricName("visits")
+	bounceRate    = metricName("bounce_rate")
 )
 
 var VisitDuration = prometheus.NewHistogramVec(
@@ -84,11 +84,11 @@ func RecordSession(s *models.Session) {
 	).Add(float64(s.Events))
 }
 
-func sessionSeries(m ...string) (r []metricname) {
+func sessionSeries(m ...string) (r []metricName) {
 	for _, v := range m {
-		switch metricname(v) {
+		switch metricName(v) {
 		case visitDuration, visits, bounceRate:
-			r = append(r, metricname(v))
+			r = append(r, metricName(v))
 		}
 	}
 	return

@@ -61,3 +61,5 @@ message Session {
   google.protobuf.Timestamp timestamp = 22;
   uint64 id = 23;
 }
+
+message Site { string domain = 1; }
